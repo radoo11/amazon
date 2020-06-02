@@ -23,3 +23,13 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+
+class AuthorizedTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        with self.client:
+            self.client.post(
+                "/login",
+                data=dict(email="ad@min.com", password="admin_user"),
+                follow_redirects=True,
+            )
