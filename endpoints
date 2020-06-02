@@ -1,5 +1,5 @@
-**1. LISTING ALL PRODUCTS**
-  **GET /products**
+1. LISTING ALL PRODUCTS
+  GET /products
   response 200 / 404
   
   response { 
@@ -10,8 +10,8 @@
     'weight': float
   }
   
-**2. CREATING AN ORDER**
-  **POST /orders**
+2. CREATING AN ORDER
+  POST /orders
   response 200 / 404
   
   request {
