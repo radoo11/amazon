@@ -85,12 +85,8 @@ class Order(db.Model):
 
     class STATUS(Enum):
         PENDING = 'pending'
-        PROCESSING = 'processing'
-        ON_HOLD = 'on-hold'
         COMPLETED = 'completed'
         CANCELLED = 'cancelled'
-        REFUNDED = 'refunded'
-        FAILED = 'failed'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     number = db.Column(db.String(255), nullable=False, unique=True)
