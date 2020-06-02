@@ -40,3 +40,43 @@ def post():
         return make_response(jsonify({'message': 'Order added'})), HTTPStatus.CREATED
     else:
         return make_response(jsonify({'message': 'No order params'})), HTTPStatus.NOT_FOUND
+
+# get() - get existing user orders (ON PENDING STATUS)
+# return 200 if orders exist
+# return 404 if user has no orders
+
+@order_blueprint.route("/orders", methods=["GET"])
+@login_required
+def get():
+    pending_orders_result = Order.query.filter(Order.user_id == current_user.id)\
+        .filter(Order.status == Order.STATUS.PENDING).all()
+
+    response = []
+
+    if pending_orders_result:
+        for order in pending_orders_result:
+            order_items = []
+
+            for order_item in order.order_items:
+                order_items.append({
+                    'order_item_id': order_item.id,
+                    'product_id': order_item.product_id,
+                    'quantity': order_item.quantity,
+                })
+
+            response.append({
+                'user_id': order.user_id,
+                'orders': [{
+                    'order_id': order.id,
+                    'order_number': order.number,
+                    'status': order.status.name,
+                    'date_created_gmt': order.date_created_gmt,
+                    'modification_date_gmt': order.modification_date_gmt,
+                    'order_items': order_items
+                }],
+                'order_total': order.total()
+            })
+
+        return make_response(jsonify(response)), HTTPStatus.OK
+    else:
+        return make_response(jsonify({'message': 'No active orders exists'})), HTTPStatus.NOT_FOUND

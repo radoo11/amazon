@@ -73,7 +73,10 @@ class TestOrderBlueprint(AuthorizedTestCase):
         db.session.add(oi)
         db.session.commit()
 
+###
 ### post() order tests - creating new orders
+###
+
     def test_user_create_order_without_params_return_404(self):
         with self.client:
             response = self.client.post(
@@ -105,3 +108,71 @@ class TestOrderBlueprint(AuthorizedTestCase):
             self.assertEqual(user_order_result.number, self.test_order_number)
             self.assertEqual(len(user_order_items), 2)
             self.assertEqual(response.status_code, 201)
+
+###
+### get() order tests - getting existing orders (ON PENDING STATUS)
+###
+
+    def test_user_has_no_existing_orders_return_404(self):
+        with self.client:
+            response = self.client.get(
+                "/orders",
+            )
+            self.assertEqual(response.status_code, 404)
+
+    def test_user_has_one_pending_orders_return200(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        self.helper_add_order_item_to_order(self.test_product1_id, self.test_product_quantity, self.test_order_id)
+        with self.client:
+            response = self.client.get(
+                "/orders",
+            )
+            self.assertEqual(response.status_code, 200)
+
+    def test_user_has_two_items_in_active_order(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        self.helper_add_order_item_to_order(self.test_product1_id, self.test_product_quantity, self.test_order_id)
+        self.helper_add_order_item_to_order(self.test_product2_id, self.test_product_quantity, self.test_order_id)
+
+        with self.client:
+            response = self.client.get(
+                "/orders",
+            )
+            json_data = json.loads(response.data)
+            order_items = json_data[0]['orders'][0]['order_items']
+            self.assertEqual(len(order_items), 2)
+            self.assertEqual(response.status_code, 200)
+
+    def test_user_has_one_no_active_order_return404(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_cancelled)
+
+        with self.client:
+            response = self.client.get(
+                "/orders",
+            )
+            self.assertEqual(response.status_code, 404)
+
+    def test_user_total_order_value_is_correct(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        self.helper_add_order_item_to_order(self.test_product1_id, self.test_product_quantity, self.test_order_id)
+        self.helper_add_order_item_to_order(self.test_product2_id, self.test_product_quantity, self.test_order_id)
+
+        with self.client:
+            response = self.client.get(
+                "/orders",
+            )
+            json_data = json.loads(response.data)
+            order_total_value = json_data[0]['order_total']
+            total_value = self.test_productPrice * self.test_product_quantity\
+                          + self.test_product2Price * self.test_product_quantity
+            self.assertEqual(order_total_value, total_value)
+            self.assertEqual(response.status_code, 200)
+
+
+
+
+
