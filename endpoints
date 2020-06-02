@@ -1,0 +1,75 @@
+1. LISTING ALL PRODUCTS
+  GET /products
+  response 200 / 404
+  
+  response { 
+    'name': string
+    'permalink': string
+    'description': string
+    'price': float,
+    'weight': float
+  }
+  
+2. CREATING AN ORDER
+  POST /orders
+  response 200 / 404
+  
+  request {
+    'number': string,
+    'order_items': [
+      {
+        'product_id': integer,
+        'quantity' : integer
+      },
+      {
+        'product_id': integer,
+        'quantity' : integer
+      }
+    ]
+  }
+  
+3. GETTING EXISTING ORDERS
+  GET /orders
+  response 200 / 404
+  
+  response {
+    'user_id': integer,
+    'orders': [
+      'order_id': integer,
+      'order_number': string,
+      'status': enum,
+      'date_created_gmt': date,
+      'modification_date_gmt': date,
+      'order_items': [
+        {
+          'order_item_id': integer
+          'product_id': integer
+          'quantity': integer
+        }
+      ],
+      'order_total': float
+    ]
+  }
+  
+4. DELETING CONCRETE ORDER
+  DELETE /orders/<int:order_id>
+  response 200 / 404
+  
+5. UPDATING CONCRETE ORDER
+  PUT /orders/<int:order_id>
+  response 200 / 404
+  
+  request {
+    'number': string,
+    'status': enum,
+    'order_items': [
+      {
+        'product_id': integer,
+        'quantity' : integer
+      },
+      {
+        'product_id': integer,
+        'quantity' : integer
+      }
+    ]
+  }
