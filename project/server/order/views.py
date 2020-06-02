@@ -2,6 +2,7 @@
 
 from flask import make_response, jsonify, Blueprint, request
 from http import HTTPStatus
+from datetime import datetime
 
 from flask_login import login_required
 from flask_login import current_user
@@ -44,7 +45,6 @@ def post():
 # get() - get existing user orders (ON PENDING STATUS)
 # return 200 if orders exist
 # return 404 if user has no orders
-
 @order_blueprint.route("/orders", methods=["GET"])
 @login_required
 def get():
@@ -84,7 +84,6 @@ def get():
 # delete() - delete order <order_id> (SET ORDER STATUS ON CANCELLED FOR STATISTICS PUROPOSES)
 # return 200 if order deleted
 # return 404 if order is not exist
-
 @order_blueprint.route("/orders/<int:order_id>", methods=["DELETE"])
 @login_required
 def delete(order_id):
@@ -95,5 +94,40 @@ def delete(order_id):
         db.session.commit()
 
         return make_response(jsonify({'message': 'Order cancelled'})), HTTPStatus.OK
+    else:
+        return make_response(jsonify({'message': 'Order is not exists'})), HTTPStatus.NOT_FOUND
+
+# put() - update order <order_id> (SET ORDER STATUS ON CANCELLED FOR STATISTICS PUROPOSES)
+# return 200 if order updated
+# return 404 if order is not exist
+@order_blueprint.route("/orders/<int:order_id>", methods=["PUT"])
+@login_required
+def put(order_id):
+    order_to_update_result = Order.query.filter(Order.user_id == current_user.id)\
+        .filter(Order.id == order_id).first()
+    post_data = request.get_json()
+
+    if order_to_update_result:
+        if post_data:
+            order_to_update_result.number = post_data['number']
+            order_to_update_result.status = post_data['status']
+            order_to_update_result.modification_date_gmt = datetime.utcnow()
+
+            db.session.commit()
+
+            OrderItem.query.filter(OrderItem.order_id == order_id).delete(synchronize_session=False)
+
+            order_items = post_data['order_items']
+            for order_item in order_items:
+                oi = OrderItem()
+                oi.product_id = order_item['product_id']
+                oi.quantity = order_item['quantity']
+                oi.order_id = order_id
+                db.session.add(oi)
+            db.session.commit()
+
+            return make_response(jsonify({'message': 'Order updated'})), HTTPStatus.OK
+        else:
+            return make_response(jsonify({'message': 'No data to update order'})), HTTPStatus.OK
     else:
         return make_response(jsonify({'message': 'Order is not exists'})), HTTPStatus.NOT_FOUND

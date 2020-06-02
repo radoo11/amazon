@@ -47,6 +47,21 @@ class TestOrderBlueprint(AuthorizedTestCase):
         ]
     }
 
+    test_order_details_to_update = {
+        'number': 'UPDATED_ORDER_NUMBER',
+        'status': Order.STATUS.COMPLETED.name,
+        'order_items': [
+            {
+                'product_id': test_product1_id,
+                'quantity': 20
+            },
+            {
+                'product_id': test_product2_id,
+                'quantity': 25
+            }
+        ]
+    }
+
     def helper_add_products(self):
         p = Product(self.test_productName, self.test_productLink, self.test_productDescription,
                     self.test_productPrice, self.test_productWeight)
@@ -194,4 +209,41 @@ class TestOrderBlueprint(AuthorizedTestCase):
             self.assertEqual(user_order_result.status.name, self.test_order_status_cancelled)
             self.assertEqual(response.status_code, 200)
 
+###
+### put() order tests - updating concrete order_id
+###
 
+    def test_order_to_update_is_not_exist_return404(self):
+        with self.client:
+            response = self.client.put(
+                "/orders/1",
+            )
+            self.assertEqual(response.status_code, 404)
+
+    def test_order_to_update_without_new_params_return200(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        with self.client:
+            response = self.client.put(
+                "/orders/" + str(self.test_order_id),
+            )
+            self.assertEqual(response.status_code, 200)
+
+    def test_order_correctly_updated(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        self.helper_add_order_item_to_order(self.test_product1_id, self.test_product_quantity, self.test_order_id)
+
+        with self.client:
+            response = self.client.put(
+                "/orders/" + str(self.test_order_id),
+                headers=self.headers,
+                data=json.dumps(self.test_order_details_to_update, indent=4, sort_keys=True),
+            )
+            user_order_result = Order.query.filter(Order.user_id == self.test_user_id).first()
+            user_order_items = OrderItem.query.filter(OrderItem.order_id == user_order_result.id).all()
+            self.assertEqual(user_order_result.number, 'UPDATED_ORDER_NUMBER')
+            self.assertEqual(user_order_result.status.name, Order.STATUS.COMPLETED.name)
+            self.assertEqual(user_order_items[0].quantity, 20)
+            self.assertEqual(user_order_items[1].quantity, 25)
+            self.assertEqual(response.status_code, 200)
