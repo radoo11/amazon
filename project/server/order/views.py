@@ -80,3 +80,20 @@ def get():
         return make_response(jsonify(response)), HTTPStatus.OK
     else:
         return make_response(jsonify({'message': 'No active orders exists'})), HTTPStatus.NOT_FOUND
+
+# delete() - delete order <order_id> (SET ORDER STATUS ON CANCELLED FOR STATISTICS PUROPOSES)
+# return 200 if order deleted
+# return 404 if order is not exist
+
+@order_blueprint.route("/orders/<int:order_id>", methods=["DELETE"])
+@login_required
+def delete(order_id):
+    order_to_delete_result = Order.query.filter(Order.user_id == current_user.id).filter(Order.id == order_id).first()
+
+    if order_to_delete_result:
+        order_to_delete_result.status = Order.STATUS.CANCELLED
+        db.session.commit()
+
+        return make_response(jsonify({'message': 'Order cancelled'})), HTTPStatus.OK
+    else:
+        return make_response(jsonify({'message': 'Order is not exists'})), HTTPStatus.NOT_FOUND

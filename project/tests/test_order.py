@@ -172,7 +172,26 @@ class TestOrderBlueprint(AuthorizedTestCase):
             self.assertEqual(order_total_value, total_value)
             self.assertEqual(response.status_code, 200)
 
+###
+### delete() order tests - deleting concrete order_id
+###
 
+    def test_order_is_not_exist_return404(self):
+        with self.client:
+            response = self.client.delete(
+                "/orders/1",
+            )
+            self.assertEqual(response.status_code, 404)
 
+    def test_order_cancelled_correctly(self):
+        self.helper_add_products()
+        self.helper_add_order_for_user(self.test_order_number, self.test_user_id, self.test_order_status_pending)
+        with self.client:
+            response = self.client.delete(
+                "/orders/" + str(self.test_order_id),
+            )
+            user_order_result = Order.query.filter(Order.user_id == self.test_user_id).first()
+            self.assertEqual(user_order_result.status.name, self.test_order_status_cancelled)
+            self.assertEqual(response.status_code, 200)
 
 
